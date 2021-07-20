@@ -17,7 +17,7 @@ read -s -p "Enter Password: " password
 printf "\n"
 
 # Make Directory in current directory for this data that all data will be saved in 
-mkdir -p $date
+mkdir -p ../$date
 
 # Define SWIFT Range
 NUMSWIFTSMIN=$min
@@ -41,9 +41,9 @@ do
         # Potential Flags for rsync -avzh
         # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
         # rsync the data directory
-        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/data ./$date/$MSNUM --log-file=./$date/dataoffload.log
+        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/data ../$date/$MSNUM --log-file=../$date/dataoffload.log
         # rsync the logs directory
-        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/logs ./$date/$MSNUM --log-file=./$date/logoffload.log
+        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/logs ../$date/$MSNUM --log-file=../$date/logoffload.log
     else
         echo "microSWIFT $MSNUM is offline"
     fi
