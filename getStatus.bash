@@ -51,7 +51,7 @@ do
         echo "microSWIFT $MSNUM is online" >> $status_log
         # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
         # Pull current git repo to update
-        # sshpass -p $PASSWORD git pull
+        # sshpass -p $PASSWORD cd ./microSWIFT git pull
 
         # Add to list of good microSWIFTs if all tests are passed 
         goodmicros[${#goodmicros[@]}]="microSWIFT $MSNUM"
