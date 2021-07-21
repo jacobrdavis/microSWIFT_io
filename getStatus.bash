@@ -6,11 +6,9 @@
 # print the branch information, test GPS sensor status, test IMU sensor status and check telemetry status.
 
 # To-do list
-# Git pull and print branch information to status log
 # Test GPS sensor status
 # test IMU sensor status
 # Test Telemetry status
-# Make log in next firectroy for day that you want to deploy
 
 # User input on microSWIFT Range
 read -p "Enter Lowest microSWIFT ID: " min
@@ -48,16 +46,36 @@ do
     if [[ $PINGVAL -eq 0 ]]
     then
         echo "microSWIFT $MSNUM is online"
-        echo "microSWIFT $MSNUM is online" >> $status_log
+        echo "Checking Status now..."
         # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
-        # Pull current git repo to update
-        # sshpass -p $PASSWORD cd ./microSWIFT git pull
+        echo "microSWIFT $MSNUM Information" >> $status_log
+        echo "microSWIFT $MSNUM is online" >> $status_log
+
+       
+        # Check Current Git branch and print to log
+        echo "Current Git Branch:" >> $status_log
+        sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git branch | grep '*'" >> $status_log
+
+        # Pull from remote to make sure microSWIFT is updated
+        echo "Results from git pull:" >> $status_log
+        sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git pull" >> $status_log
+        
+        # Add empty line before next status check
+        echo -e "\n" >> $status_log
+
 
         # Add to list of good microSWIFTs if all tests are passed 
         goodmicros[${#goodmicros[@]}]="microSWIFT $MSNUM"
+
+        # End status check
+        echo "Status Check Complete for microSWIFT $MSNUM"
+        echo -e "\n"
     else
+        echo "microSWIFT $MSNUM Information" >> $status_log
         echo "microSWIFT $MSNUM is offline"
+        echo -e "\n"
         echo "microSWIFT $MSNUM is offline" >> $status_log
+        echo -e "\n" >> $status_log
     fi
 done
 
