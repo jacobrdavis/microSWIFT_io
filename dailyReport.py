@@ -3,4 +3,3 @@
 # The daily report will include:
 # 1. List of microSWIFTs that were deployed that day
 # 2. A map all drifter tracks - color coded by time 
-# 

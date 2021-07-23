@@ -30,8 +30,11 @@ do
     if [[ $PINGVAL -eq 0 ]]
     then
         echo "microSWIFT $MSNUM is online"
+        # Pull from current branch to update before changing
+        sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git pull"
+
         # Switch git branch to desired branch 
-        sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git checkout $branch"
+        sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git checkout -f $branch"
 
         # Pull from branch that it is switched to to update
         sshpass -p $PASSWORD ssh pi@192.168.0.$MSNUM "cd ./microSWIFT; git pull"
