@@ -12,41 +12,64 @@
 # User input on microSWIFT Range
 read -p "Enter Lowest microSWIFT ID: " min
 read -p "Enter Highest microSWIFT ID: " max
-read -p "Enter UTC Date(DDMMMYYYY): " date
-read -s -p "Enter Password: " password
+# read -p "Enter Mission Number: " mission_num
+read -p "Enter Start Time (UTC) (DDMMMYYYY_HHMMSS): " start
+read -p "Enter End Time (UTC) (DDMMMYYYY_HHMMSS): " end 
+# read -s -p "Enter Password: " password
 printf "\n"
 
-# Make Directory in current directory for this data that all data will be saved in 
-mkdir -p ../$date
+# # Make Directory in current directory for this data that all data will be saved in 
+# mkdir -p ../Data/Mission$mission_num
 
-# Define SWIFT Range
-NUMSWIFTSMIN=$min
-NUMSWIFTSMAX=$max
+# # Define SWIFT Range
+# NUMSWIFTSMIN=$min
+# NUMSWIFTSMAX=$max
+
+# Define dates and times
+start_date=${start:0:9}
+start_time=${start:10:16}
+end_date=${end:0:9}
+end_time=${end:10:16}
+
+# Find Files in date range
+printf "start date: $start_date\n"
+printf "start time: $start_time\n"
+printf "end date: $end_date\n"
+printf "end time: $end_date\n"
 
 # Define microSWIFT IP address 
 IP="192.168.0."
 PASSWORD=$password
 
 # Loop through each microSWIFT possible and see who is online
-for MSNUM in $(seq $NUMSWIFTSMIN $NUMSWIFTSMAX)
+for MSNUM in $(seq $min $max)
 do
-    # Ping the microSWIFT
-    # Note it must be two pings to send and receive otherwise it wont be reached
-    ping -c 2  $IP$MSNUM 2>&1 >/dev/null; PINGVAL=$?
-    # If microSWIFT is online, sync if not skip
-    if [[ $PINGVAL -eq 0 ]]
-    then
+    # # Ping the microSWIFT
+    # # Note it must be two pings to send and receive otherwise it wont be reached
+    # ping -c 2  $IP$MSNUM 2>&1 >/dev/null; PINGVAL=$?
+    # # If microSWIFT is online, sync if not skip
+    # if [[ $PINGVAL -eq 0 ]]
+    # then
         echo "microSWIFT $MSNUM is online"
-        # rsync locates data on microSWIFT and puts it in the local buffer
-        # Potential Flags for rsync -avzh
-        # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
-        # rsync the data directory
-        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/data ../$date/$MSNUM --log-file=../$date/dataoffload.log
-        # rsync the logs directory
-        sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/logs ../$date/$MSNUM --log-file=../$date/logoffload.log
-    else
-        echo "microSWIFT $MSNUM is offline"
-    fi
+        
+        if [ $start_date = $end_date ]
+        then
+            echo "they are equal"Piee123451
+            
+        else
+            echo "not equal"
+        fi
+
+        # # rsync locates data on microSWIFT and puts it in the local buffer
+        # # Potential Flags for rsync -avzh
+        # # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
+        # # rsync the data directory
+        # sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/data ../Data/Mission$mission_num/$MSNUM --log-file=../Data/Mission$mission_num/dataoffload.log
+        # # rsync the logs directory
+        # sshpass -p $PASSWORD rsync -av --include "*/" --include="*$date*" --exclude="*" pi@$IP$MSNUM:/home/pi/microSWIFT/logs ../Data/Mission$mission_num/$MSNUM --log-file=../Data/Mission$mission_num/logoffload.log
+    # else
+    #     echo "microSWIFT $MSNUM is offline"
+    # fi
 done
 
 
