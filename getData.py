@@ -103,8 +103,17 @@ for microSWIFT in dunex_xlsx['microSWIFTs Deployed'].iloc[mission_num].split(','
 logging.info('microSWIFTs Deployed on this mission were: {}'.format(microSWIFTs_deployed))
 
 # Loop through each microSWIFT on the network to offload data
+time_to_offload_list = []
+num_offloaded = 0
+microSWIFTs_not_offloaded = []
+num_not_offloaded = 0
+
 logging.info('------------ Data Offload ------------')
 for microSWIFT in microSWIFTs_deployed:
+
+    # Offload time
+    start_offload_time = datetime.datetime.utcnow()
+
     # Ping microSWIFT to see if it is on the network
     microSWIFT_ip_address = IP + str(microSWIFT)
     ping = subprocess.run(['ping', '-c', '2', microSWIFT_ip_address])
@@ -141,9 +150,25 @@ for microSWIFT in microSWIFTs_deployed:
 
             else:
                 continue
+        
+        # End Offload time 
+        num_offloaded += 1
+        time_to_offload_datetime = datetime.datetime.utcnow() - start_offload_time
+        time_to_offload_float = time_to_offload_datetime.total_seconds()
+        time_to_offload_list.append(time_to_offload_float)
 
     else:
         logging.info('microSWIFT {} is offline'.format(microSWIFT))
+        microSWIFTs_not_offloaded.append(microSWIFT)
+        num_not_offloaded += 1
 
 # End of Data Offloading - Log offload statistics
+# microSWIFTs that were not offloaded
+if num_not_offloaded == 0:
+    logging.info('All microSWIFTs on mission were offloaded')
+else:
+    logging.info('{0} microSWIFTs that were not offloaded were {1}'.format(num_not_offloaded, microSWIFTs_not_offloaded))
 
+# Offload times
+time_to_offload_avg = sum(time_to_offload_list)/num_offloaded
+logging.info('The average offload time was {}'.format(time_to_offload_avg))
