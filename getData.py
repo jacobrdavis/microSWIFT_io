@@ -16,11 +16,62 @@ import subprocess # Subprocess example: subprocess.run(["ls", "-l"])
 import pandas as pd
 import datetime
 import logging
-import netCDF4 as nc
+
+# Function to convert microSWIFT file name to datetime
+def get_microSWIFT_file_time(fname):
+    import datetime
+
+    # Convert Month string to month num
+    month_str = fname[-21:-18]
+    
+    # January
+    if month_str == 'Jan':
+        month_num = '01'
+    # February
+    if month_str == 'Feb':
+        month_num = '02'
+    # March
+    if month_str == 'Mar':
+        month_num = '03'
+    # April
+    if month_str == 'Apr':
+        month_num = '04'
+    # May
+    if month_str == 'May':
+        month_num = '05'
+    # June
+    if month_str == 'Jun':
+        month_num = '06'
+    # July
+    if month_str == 'Jul':
+        month_num = '07'
+    # August
+    if month_str == 'Aug':
+        month_num = '08'
+    # September
+    if month_str == 'Sep':
+        month_num = '09'
+    # October 
+    if month_str == 'Oct':
+        month_num = '10'
+    # November
+    if month_str == 'Nov':
+        month_num = '11'
+    # December
+    if month_str == 'Dec':
+        month_num = '12'
+
+    # Compute Datetime
+    date_str = '{0}-{1}-{2}T{3}:{4}:{5}'.format(fname[-18:-14], month_num, fname[-23:-21], fname[-13:-11], fname[-11:-9], fname[-9:-7])
+    microSWIFT_file_time = datetime.datetime.fromisoformat(date_str)
+    return microSWIFT_file_time
 
 # Define microSWIFT IP address and Password
 IP="192.168.0."
 PASSWORD="1013ne40th"
+
+# Define record Window Length 
+record_window_length = datetime.timedelta(hours=1)
 
 # User input for mission number 
 mission_num = int(input('Enter Mission Number: '))
@@ -76,12 +127,23 @@ for microSWIFT in microSWIFTs_deployed:
             logging.info('--- microSWIFT.log could not be offloaded')
 
         # Get list of all data files on microSWIFT
-        list_of_data_files = subprocess.run(['sshpass', '-p', PASSWORD, 'ssh', 'pi@{}'.format(microSWIFT_ip_address), 'ls ~/microSWIFT/data'], stdout=PIPE).stdout.splitlines()
-        print(type(list_of_data_files))
-        # # Sort through each file to see if it is within the mission (within 1 record window)
-        # for file_name in data_file_list:
-        #     subprocess.run(['sshpass', '-p', PASSWORD, 'scp', 'pi@{0}:/home/pi/microSWIFT/data/{1}'.format(microSWIFT_ip_address, file_name), microSWIFT_dir_str])
-        #     logging.info('{0} is copied to microSWIFT {1} data directory'.format(file_name, microSWIFT))
+        list_of_data_files = subprocess.run(['sshpass', '-p', PASSWORD, 'ssh', 'pi@{}'.format(microSWIFT_ip_address), 'ls ~/microSWIFT/data'], stdout=subprocess.PIPE, text=True).stdout.splitlines()
+
+        # Sort through each file to see if it is within the mission (within 1 record window)
+        for file_name in list_of_data_files:
+            # Get aware time object of when file was created
+            file_time = get_microSWIFT_file_time(file_name)
+
+            # Compare to see if it was within the mission time frame or within one burst length of the mission start time 
+            if (file_time >= (start_time - record_window_length)  and file_time <= end_time):
+                subprocess.run(['sshpass', '-p', PASSWORD, 'scp', 'pi@{0}:/home/pi/microSWIFT/data/{1}'.format(microSWIFT_ip_address, file_name), microSWIFT_dir_str])
+                logging.info('--- {0} was copied to microSWIFT {1} data directory'.format(file_name, microSWIFT))
+
+            else:
+                continue
 
     else:
         logging.info('microSWIFT {} is offline'.format(microSWIFT))
+
+# End of Data Offloading - Log offload statistics
+
