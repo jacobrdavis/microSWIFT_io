@@ -73,6 +73,15 @@ PASSWORD="1013ne40th"
 # Define record Window Length 
 record_window_length = datetime.timedelta(hours=1)
 
+# Define project directory
+project_dir = '/Volumes/DUNEXdata/DUNEXMainExp_Oct2021/'
+
+# Define Metadata Excel sheet name
+metadata_name = 'DUNEXMainExp_MetaData.xlsx'
+
+# Combine file name and project Directory
+metadata_filename = project_dir + metadata_name
+
 # User input for mission number 
 mission_num = int(input('Enter Mission Number: '))
 
@@ -86,7 +95,7 @@ logging.basicConfig(filename=log_name, encoding='utf-8', level=logging.DEBUG)
 logging.info('------------ Mission {} Data Offload ------------'.format(mission_num))
 
 # Create dataframe object from DUNEX MetaData SpreadSheet
-dunex_xlsx = pd.read_excel('/Users/edwinrainville/Documents/UW/DUNEX/DUNEXMainExp_Oct2021/DUNEXMainExp_MetaData.xlsx')
+dunex_xlsx = pd.read_excel(metadata_filename)
 
 # Read in Start Time and convert to datetime
 start_time = datetime.datetime.fromisoformat(dunex_xlsx['Start Time'].iloc[mission_num])
@@ -128,6 +137,7 @@ for microSWIFT in microSWIFTs_deployed:
         subprocess.run(["mkdir", "-p", microSWIFT_dir_str])
 
         # Copy microSWIFT log into the microSWIFT directory
+        # To download on mac OS use the command: brew install hudochenkov/sshpass/sshpass
         log_offload_process = subprocess.run(['sshpass', '-p', PASSWORD, 'scp', 'pi@{}:/home/pi/microSWIFT/logs/microSWIFT.log'.format(microSWIFT_ip_address), microSWIFT_dir_str ]) 
         log_offload_process_rc = log_offload_process.returncode
         if log_offload_process_rc == 0:
