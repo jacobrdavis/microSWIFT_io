@@ -1,9 +1,24 @@
+"""
+Author: @jacobrdavis
+
+A collection of python functions for reading microSWIFT short burst data (SBD) files.
+
+Contents:
+    - get_sensor_type()
+    - unpack_SBD()
+    - read_SBD()
+
+Log:
+    - 2022-09-06, J.Davis: created
+    - 2022-09-12, J.Davis: updated doc strs
+
+"""
 import struct
 import numpy as np
 from datetime import datetime, timezone
 
 """
-microSWIFT payload definitions
+MicroSWIFT payload definitions. See https://github.com/alexdeklerk/microSWIFT
 """
 payloadDef = {
     50 : '<sbbhfff42f42f42f42f42f42f42ffffffffiiiiii',
@@ -12,15 +27,29 @@ payloadDef = {
 }
 
 """
-SWIFT variables
+SWIFT variables to extract
 """
-SWIFTvars = ['datetime', 'Hs', 'Tp', 'Dp',
-             'E' ,'f' ,'a1', 'b1', 'a2', 'b2', 'check', 
-             'u_mean', 'v_mean', 'z_mean', 'lat' , 'lon', 
-             'temp', 'salinity', 'volt']
+SWIFTvars = [
+    'datetime', 'Hs', 'Tp', 'Dp',
+    'E' ,'f' ,'a1', 'b1', 'a2', 'b2', 'check', 
+    'u_mean', 'v_mean', 'z_mean', 'lat' , 'lon', 
+    'temp', 'salinity', 'volt'
+]
 
-def get_sensor_type(fileContent):
-    #TODO: docstr
+def get_sensor_type(fileContent: bytes) -> int:
+    """
+    Helper function to determine sensor type from an SBD message.
+
+    Arguments:
+        - fileContent (bytes), binary SBD message
+
+    Raises:
+        - ValueError, raise error if the sensor type is not one of the possible
+          types defined in microSWIFT.py and configured to parsed on the sever.
+
+    Returns:
+        - (int), int corresponding to sensor type
+    """
     payloadStartIdx = 0 # (no header) otherwise it is: = payload_data.index(b':') 
     sensorType = ord(fileContent[payloadStartIdx+1:payloadStartIdx+2]) # sensor type is stored 1 byte after the header
     if sensorType not in payloadDef.keys():
@@ -28,8 +57,17 @@ def get_sensor_type(fileContent):
     
     return sensorType
 
-def unpack_SBD(fileContent):
+def unpack_SBD(fileContent: bytes) -> dict:
+    """
+    Unpack short burst data messages using formats defined in the sensor type
+    payload definitions.
 
+    Arguments:
+        - fileContent (bytes), binary SBD message
+
+    Returns:
+        - (dict), microSWIFT variables stored in a temporary dictionary
+    """
     sensorType = get_sensor_type(fileContent)
 
     payloadStruct = payloadDef[sensorType] #['struct']
@@ -75,74 +113,19 @@ def unpack_SBD(fileContent):
 
     return SWIFT
 
-def read_SBD(SBDfile: str): #, fromMemory: bool = False):
-    #TODO: docstr
-    
-    # if fromMemory is True:
-    #     fileContent = SBDfile.read()
-        
-    # else:
-    #     with open(SBDfile, mode='rb') as file: # b is important -> binary
-    #         fileContent = file.read()
+def read_SBD(SBDfile: str) -> dict: #, fromMemory: bool = False):
+    """
+    Read microSWIFT short burst data messages.
+
+    Arguments:
+        - SBDfile (str), path to .sbd file
+
+    Returns:
+        - (dict), microSWIFT variables stored in a temporary dictionary
+    """
 
     fileContent = SBDfile.read()
 
     return unpack_SBD(fileContent)
 
 
-
-
-	# 				if sensor_type0 not in [50,51,52]:
-	# 					logger.info(f'Failed to read sensor type properly; read sensor type as: {sensor_type0}')
-	# 					logger.info(f'Trying to send as configured sensor type instead ({sensor_type})')
-	# 					send_sensor_type = sensor_type
-    # return data
-
-    # SWIFT = {'datetime' : None,
-    #          'Hs'       : None,
-    #          'Tp'       : None,
-    #          'Dp'       : None, 
-    #          'E'        : None,
-    #          'f'        : None, 
-    #          'a1'       : None,
-    #          'b1'       : None, 
-    #          'a2'       : None,
-    #          'b2'       : None,
-    #          'check'    : None,
-    #          'u_mean'   : None,
-    #          'v_mean'   : None,
-    #          'z_mean'   : None,
-    #          'lat'      : None,
-    #          'lon'      : None,
-    #          'temp'     : None,
-    #          'salinity' : None,
-    #          'volt'     : None,
-    # }
-
-# s = slice
-
-# payloadDef = {
-#     50 : {
-#         'struct' : '<sbbhfff42f42f42f42f42f42f42ffffffffiiiiii',
-#         'params' :  [
-#             ('Hs' ,4) , 
-#             ('Tp', 5), 
-#             ('E', s(6,42))
-#         ]
-#         # 'indices' : [ 4, 5, s(2,42), s(42,49), 
-#     },
-
-#     51 : {
-#         'struct'  : '<sbbhfff42fffffffffffiiiiii',
-#         'vars'    : [],
-#         'indices' : [],
-#     },
-
-#     52 : {
-#         'struct'  : '<sbbheee42eee42b42b42b42b42Bffeeef',
-#         'vars'    : [],
-#         'indices' : [],
-#     },   
-# }
-# for key, idx in payloadDef[50]['params']:
-#     data52[key] = data[idx]

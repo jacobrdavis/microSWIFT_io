@@ -1,6 +1,26 @@
-#TODO: docstr header
-#TODO: create fun to save to ncf and csv
 
+"""
+Author: @jacobrdavis
+
+A collection of python functions for accessing data from the UW-APL SWIFT server:
+http://swiftserver.apl.washington.edu/ (base URL)
+http://faculty.washington.edu/jmt3rd/SWIFTdata/DynamicDataLinks.html (HTML page)
+
+See pull_telemetry_example.ipynb for a complete tutorial.
+
+
+Contents:
+    - create_request()
+    - pull_telemetry_as_var()
+    - pull_telemetry_as_zip()
+    - pull_telemetry_as_json()
+    - pull_telemetry_as_kml()
+
+Log:
+    - 2022-09-06, J.Davis: created
+    - 2022-09-12, J.Davis: updated doc strs, added datetime indexing to dataframes, requirements.txt
+
+"""
 from urllib.request import urlopen
 from urllib.parse import urlencode, quote_plus
 from io import BytesIO
@@ -12,74 +32,51 @@ from pandas import DataFrame
 from xarray import DataArray
 from compile_SBD import compile_SBD
 
-def create_request(buoyID: str, startDate: datetime, endDate: datetime, formatOut: str) -> dict:
-    #TODO: docstr
+def create_request(
+    buoyID: str, 
+    startDate: datetime, 
+    endDate: datetime, 
+    formatOut: str
+) -> dict:
     """
-    _summary_
+    Create a URL-encoded request.
 
     Arguments:
-        - buoyID (str), _description_
-        - startDate (datetime), _description_
-        - endDate (datetime), _description_
-        - formatOut (str), _description_
+        - buoyID (str), microSWIFT ID including leading zero (e.g. '043')
+        - startDate (datetime), query start date in UTC (e.g. datetime(2022,9,26,0,0,0))
+        - endDate (datetime), query end date in UTC
+        - formatOut (str), format to query the SWIFT server for:
+            * 'zip', return a `.zip` file of SBD messages
+            * 'json', JSON-formatted text
+            * 'kml', kml of drift tracks
 
     Returns:
-        - (dict), _description_
+        - (dict), URL-enoded (utf8) request to be sent to the server
     """
+
     # Convert dates to strings:
     startDateStr  = startDate.strftime('%Y-%m-%dT%H:%M:%S')
     endDateStr = endDate.strftime('%Y-%m-%dT%H:%M:%S')
 
     # Pack into a payload dictionary:
-    payload = {'buoy_name' : f'microSWIFT {buoyID}'.encode('utf8'),
-               'start' : startDateStr.encode('utf8'),
-               'end' : endDateStr.encode('utf8'),
-               'format' : formatOut.encode('utf8')}
+    payload = {
+        'buoy_name' : f'microSWIFT {buoyID}'.encode('utf8'),
+        'start' : startDateStr.encode('utf8'),
+        'end' : endDateStr.encode('utf8'),
+        'format' : formatOut.encode('utf8')
+    }
 
     return urlencode(payload, quote_via=quote_plus)
-
-def pull_telemetry_as_json(
-    buoyID: str,
-    startDate: datetime,
-    endDate: datetime = datetime.utcnow(),
-    ) -> dict:
-    #TODO: docstr
-    """
-    _summary_
-
-    Arguments:
-        - buoyID (str), _description_
-        - startDate (datetime), _description_
-        - endDate (datetime, optional), _description_; defaults to datetime.utcnow().
-
-    Returns:
-        - (dict), _description_
-    """
-    # Create the payload request:
-    formatOut = 'json'
-    request = create_request(buoyID, startDate, endDate, formatOut)
-
-    # Define the base URL:
-    baseURL = 'http://swiftserver.apl.washington.edu/kml?action=kml&'   
-
-    # Get the response:
-    response = urlopen(baseURL + request)
-
-    # Return as json
-    jsonData = response.read()
-    response.close()
-
-    return json.loads(jsonData)
 
 def pull_telemetry_as_var(
     buoyID: str,
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
-    structType: str = dict,
-    ) -> Union[List[dict], DataFrame, DataArray]:
+    varType: str = 'dict',
+) -> Union[List[dict], DataFrame, DataArray]:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
-    return an object in memory. Note the .zip file of short burst data (SBD) messages
+    return an object in memory. Note the `.zip` file of short burst data (SBD) messages
     is handled in memory and not saved to the local machine. Use pull_telemetry_as_zip
     for this purpose.
 
@@ -87,16 +84,16 @@ def pull_telemetry_as_var(
         - buoyID (str), microSWIFT ID including leading zero (e.g. '043')
         - startDate (datetime), query start date in UTC (e.g. datetime(2022,9,26,0,0,0))
         - endDate (datetime, optional), query end date in UTC; defaults to datetime.utcnow().
-        - structType (str, optional), data structure to be returned; defaults to 'dict'
+        - varType (str, optional), variable type to be returned; defaults to 'dict'
             Possible values include:
-            * 'dict', returns a list of dictionaries with self-consistent keys
+            * 'dict', a dictionary with key-value pairs corresponding to vars
             * 'pandas', returns a pandas DataFrame object
             * 'xarray', returns an xarray DataArray object
 
     Returns:
-        - (List[dict]), if structType == 'dict' 
-        - (DataFrame), if structType == 'pandas' 
-        - (DataArray), if structType == 'xarray' 
+        - (List[dict]), if varType == 'dict' 
+        - (DataFrame), if varType == 'pandas' 
+        - (DataArray), if varType == 'xarray' 
 
     Example:
 
@@ -105,7 +102,7 @@ def pull_telemetry_as_var(
 
         >>> from datetime import datetime
         >>> import pandas
-        >>> SWIFT_df = pull_telemetry_as_var('019', datetime(2022,9,26), structType = 'pandas')
+        >>> SWIFT_df = pull_telemetry_as_var('019', datetime(2022,9,26), varType = 'pandas')
     """
     # Create the payload request:
     formatOut = 'zip'
@@ -122,17 +119,17 @@ def pull_telemetry_as_var(
     response.close()
 
     # Compile SBD messages into specified variable and return:
-    return compile_SBD(zippedFile, structType, fromMemory = True)
+    return compile_SBD(zippedFile, varType, fromMemory = True)
 
 def pull_telemetry_as_zip(
     buoyID: str,
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     localPath: str = None,
-    ) -> BinaryIO:
+) -> BinaryIO:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
-    download a .zip file of individual short burst data (SBD) messages.
+    download a `.zip` file of individual short burst data (SBD) messages.
 
     Arguments:
         - buoyID (str), microSWIFT ID including leading zero (e.g. '043')
@@ -142,7 +139,7 @@ def pull_telemetry_as_zip(
             and filename; defaults to the current directory as './microSWIFT{buoyID}.zip'
 
     Returns:
-        - (BinaryIO), compressed .zip file at localPath
+        - (BinaryIO), compressed `.zip` file at localPath
 
     Example:
 
@@ -174,25 +171,77 @@ def pull_telemetry_as_zip(
         local.close()  
     return
 
+def pull_telemetry_as_json(
+    buoyID: str,
+    startDate: datetime,
+    endDate: datetime = datetime.utcnow(),
+) -> dict:
+    """
+    Query the SWIFT server for microSWIFT data over a specified date range and 
+    download a `.zip` file of individual short burst data (SBD) messages.
+
+    Arguments:
+        - buoyID (str), microSWIFT ID including leading zero (e.g. '043')
+        - startDate (datetime), query start date in UTC (e.g. datetime(2022,9,26,0,0,0))
+        - endDate (datetime, optional), query end date in UTC; defaults to datetime.utcnow().
+
+    Returns:
+        - (dict), JSON-formatted Python dictionary 
+
+    Example:
+
+    Query the SWIFT server and return a variable containing JSON-formatted text. Save to a .json file.
+
+        >>> from datetime import datetime
+        >>> import json
+        >>> SWIFT_json = pull_telemetry_as_json(buoyID = '019', startDate = datetime(2022,9,26), endDate = datetime(2022,9,30))
+        >>> with open('SWIFT.json', 'w') as f:
+        >>>     json.dump(SWIFT_json, f)
+    """
+    # Create the payload request:
+    formatOut = 'json'
+    request = create_request(buoyID, startDate, endDate, formatOut)
+
+    # Define the base URL:
+    baseURL = 'http://swiftserver.apl.washington.edu/kml?action=kml&'   
+
+    # Get the response:
+    response = urlopen(baseURL + request)
+
+    # Return as json
+    jsonData = response.read()
+    response.close()
+
+    return json.loads(jsonData)
 
 def pull_telemetry_as_kml(
     buoyID: str,
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     localPath: str = None,
-    ) -> TextIO:
-    #TODO: docstr
+) -> TextIO:
     """
-    _summary_
+    Query the SWIFT server for microSWIFT data over a specified date range and 
+    download a `.kml` file containing the buoy's GPS coordinates.
 
     Arguments:
-        - buoyID (str), _description_
-        - startDate (datetime), _description_
-        - endDate (datetime, optional), _description_; defaults to datetime.utcnow().
-        - localPath (str, optional), _description_; defaults to None.
+        - buoyID (str), microSWIFT ID including leading zero (e.g. '043')
+        - startDate (datetime), query start date in UTC (e.g. datetime(2022,9,26,0,0,0))
+        - endDate (datetime, optional), query end date in UTC; defaults to datetime.utcnow().
+        - localPath (str, optional), path to local file destination including folder 
+            and filename; defaults to the current directory as 
+            ./microSWIFT{buoyID}_{'%Y-%m-%dT%H%M%S'}_to_{'%Y-%m-%dT%H%M%S'}.kml
 
     Returns:
-        - (TextIO), _description_
+        - (TextIO), .kml file at localPath
+
+    Example:
+
+    Download a KML file of buoy drift tracks; by leaving the endDate empty, the 
+    function will default to the present time (in UTC):
+
+        >>> from datetime import datetime
+        >>> pull_telemetry_as_kml(buoyID = '019', startDate = datetime(2022,9,26))
     """
     # Create the payload request:
     formatOut = 'kml'
@@ -218,24 +267,27 @@ def pull_telemetry_as_kml(
 
 
 if __name__ == "__main__":
+
+    # Run examples:
     start = datetime(2022,9,26,0,0,0)
     end = datetime.utcnow()
-    
-    # SWIFT_json = pull_telemetry_as_json(buoyID = '019', startDate = start, endDate= end)
-    # print(SWIFT_json)
+    buoyID = '019'
 
-    # SWIFT_dict = pull_telemetry_as_var(buoyID = '019', startDate = start, endDate= end, structType = 'dict')
-    # print(SWIFT_dict)
+    SWIFT_json = pull_telemetry_as_json(buoyID = buoyID, startDate = start, endDate= end)
+    print(SWIFT_json)
 
-    SWIFT_df = pull_telemetry_as_var('019', datetime(2022,9,26), structType = 'pandas')
+    SWIFT_dict = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate= end, varType = 'dict')
+    print(SWIFT_dict.keys())
 
-    # SWIFT_df = pull_telemetry_as_var(buoyID = '019', startDate = start, endDate= end, structType = 'pandas')
+    SWIFT_df = pull_telemetry_as_var(buoyID, datetime(2022,9,26), varType = 'pandas')
+
+    SWIFT_df = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate= end, varType = 'pandas')
     print(SWIFT_df.info())
 
-    #TODO:
-    # SWIFT_ds = pull_telemetry_as_var(buoyID = '019', startDate = start, endDate= end, structType = 'xarray')
+    # TODO:
+    # SWIFT_ds = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate= end, varType = 'xarray')
     # print(SWIFT_ds)
 
-    # pull_telemetry_as_zip(buoyID = '019', startDate = start, endDate= end)
+    pull_telemetry_as_zip(buoyID = buoyID, startDate = start, endDate= end)
 
-    # pull_telemetry_as_kml(buoyID = '019', startDate = start, endDate= end)
+    pull_telemetry_as_kml(buoyID = buoyID, startDate = start, endDate= end)
