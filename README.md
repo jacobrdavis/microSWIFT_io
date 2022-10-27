@@ -1,5 +1,7 @@
 # microSWIFT_io
-Offload, input, output and analysis scripts, forked from `edwinrainville/microSWIFT-io`. See `examples/` for usage. 
+Python modules for microSWIFT onboard and telemetry input/output. Forked from `edwinrainville/microSWIFT-io`. 
+
+See `examples/` for usage. 
 
 ## Structure:
 
