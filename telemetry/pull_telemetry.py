@@ -36,7 +36,7 @@ def create_request(
     startDate: datetime, 
     endDate: datetime, 
     formatOut: str
-) -> dict:
+)-> dict:
     """
     Create a URL-encoded request.
 
@@ -72,7 +72,7 @@ def pull_telemetry_as_var(
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     varType: str = 'dict',
-) -> Union[List[dict], DataFrame, DataArray]:
+)-> Union[List[dict], DataFrame, DataArray]:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
     return an object in memory. Note the `.zip` file of short burst data (SBD) messages
@@ -125,7 +125,7 @@ def pull_telemetry_as_zip(
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     localPath: str = None,
-) -> BinaryIO:
+)-> BinaryIO:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
     download a `.zip` file of individual short burst data (SBD) messages.
@@ -174,7 +174,7 @@ def pull_telemetry_as_json(
     buoyID: str,
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
-) -> dict:
+)-> dict:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
     download a `.zip` file of individual short burst data (SBD) messages.
@@ -218,7 +218,7 @@ def pull_telemetry_as_kml(
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     localPath: str = None,
-) -> TextIO:
+)-> TextIO:
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
     download a `.kml` file containing the buoy's GPS coordinates.

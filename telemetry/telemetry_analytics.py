@@ -1,6 +1,6 @@
 """
 Author: @jacobrdavis
-
+#TODO:
 A collection of python functions for accessing data from the UW-APL SWIFT server:
 http://swiftserver.apl.washington.edu/ (base URL)
 http://faculty.washington.edu/jmt3rd/SWIFTdata/DynamicDataLinks.html (HTML page)
@@ -133,15 +133,23 @@ def create_telemetry_report_figure(
     ax.set_ylabel('messages per burst window')
 
 #%%
-start = datetime(2022,9,26,0,0,0)
-end   = datetime(2022,9,30,0,0,0)
-buoyID = '019'
-buoyID = '057'
+# start = datetime(2022,9,26,0,0,0)
+# end   = datetime(2022,9,30,0,0,0)
+# buoyID = '019'
+# buoyID = '057'
+
+start = datetime(2022,10,13,0,0,0)
+end   = datetime(2022,10,15,0,0,0)
+buoyID = '062'
 
 
 # start = datetime(2022,10,15,12,0,0)
 # buoyID = '005'
 # buoyID = '068'
+
+SWIFT_pd = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate = end, varType = 'pandas')
+
+
 burstInterval = None
 SWIFT_json = pull_telemetry_as_json(buoyID = buoyID, startDate = start)
 
@@ -150,8 +158,9 @@ serverTimes = [msg['timestamp'] for msg in SWIFT_json['buoys'][0]['data']]
 
 serverTimes = pd.to_datetime(serverTimes, format='%Y-%m-%dT%H:%M:%S%Z') # datetime.strptime(serverTimes[0], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
 
-SWIFT_dict = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate = end, varType = 'dict')
 
+SWIFT_dict = pull_telemetry_as_var(buoyID = buoyID, startDate = start, endDate = end, varType = 'dict')
+#%%
 if burstInterval is None:
     msgRate = np.diff(SWIFT_dict['datetime'])
     msgPerHr = np.round(np.mean(msgRate[msgRate > timedelta(0)]).total_seconds() / 3600)
@@ -178,48 +187,4 @@ fullRange = date_range(minDate, maxDate, msgPerHr)
 create_telemetry_report_figure(serverTimes, SWIFT_dict['datetime'], dateRange)
 
 
-
 #%%
-fig,ax = plt.subplots()
-sns.histplot([dateRange[i] for i in inTimes],
-bins= len(dateRange),
- ax=ax)
-plt.xticks(rotation = 90)
-
-# hist, bin_edges = np.histogram(inTimesServer, bins=len(dateRange)+1)
-
-
-fig,ax = plt.subplots()
-ax.hist([dateRange[i] for i in inTimesServer],
-    bins= dateRange,
-    alpha=0.5,
-)
-
-ax.hist([dateRange[i] for i in inTimes],
-bins= dateRange,
-alpha=0.5,
-)
-plt.xticks(rotation = 90)
-
-
-fig,ax = plt.subplots()
-sns.histplot(SWIFT_dict['datetime'],
-# bins= len(SWIFT_dict['datetime']),
- ax=ax)
-# scatter(dn2dt([microSWIFT017.time]),1*ones(size([microSWIFT017.time])),'filled','color',[0.0000 0.4470 0.7410])
-
-
-fig,ax = plt.subplots()
-ax.scatter(SWIFT_dict['datetime'], np.ones(np.shape(SWIFT_dict['datetime'])))
-ax.scatter(dateRange, np.ones(np.shape(dateRange)), color='none', edgecolor='k')
-ax.axvline(start)
-ax.axvline(end)
-plt.xticks(rotation = 90)
-
-
-#%%
-
-
-#%%
-
-

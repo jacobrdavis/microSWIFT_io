@@ -11,30 +11,12 @@ Contents:
 Log:
     - 2022-09-06, J.Davis: created
     - 2022-09-12, J.Davis: updated doc strs
-
+    - 2022-10-27, J.Davis: moved sensor type and payload def to definitions.py
 """
 import struct
 import numpy as np
 from datetime import datetime, timezone
-
-"""
-MicroSWIFT payload definitions. See https://github.com/alexdeklerk/microSWIFT
-"""
-payloadDef = {
-    50 : '<sbbhfff42f42f42f42f42f42f42ffffffffiiiiii',
-    51 : '<sbbhfff42fffffffffffiiiiii',
-    52 : '<sbbheee42eee42b42b42b42b42Bffeeef',
-}
-
-"""
-SWIFT variables to extract
-"""
-SWIFTvars = [
-    'datetime', 'Hs', 'Tp', 'Dp',
-    'E' ,'f' ,'a1', 'b1', 'a2', 'b2', 'check', 
-    'u_mean', 'v_mean', 'z_mean', 'lat' , 'lon', 
-    'temp', 'salinity', 'volt'
-]
+from definitions import get_sensor_type_definition, get_variable_definitions
 
 def get_sensor_type(fileContent: bytes) -> int:
     """
@@ -43,18 +25,11 @@ def get_sensor_type(fileContent: bytes) -> int:
     Arguments:
         - fileContent (bytes), binary SBD message
 
-    Raises:
-        - ValueError, raise error if the sensor type is not one of the possible
-          types defined in microSWIFT.py and configured to parsed on the sever.
-
     Returns:
         - (int), int corresponding to sensor type
     """
     payloadStartIdx = 0 # (no header) otherwise it is: = payload_data.index(b':') 
     sensorType = ord(fileContent[payloadStartIdx+1:payloadStartIdx+2]) # sensor type is stored 1 byte after the header
-    if sensorType not in payloadDef.keys():
-        raise ValueError(f"sensorType not defined - can only be value in: {list(payloadDef.keys())}")
-    
     return sensorType
 
 def unpack_SBD(fileContent: bytes) -> dict:
@@ -70,18 +45,44 @@ def unpack_SBD(fileContent: bytes) -> dict:
     """
     sensorType = get_sensor_type(fileContent)
 
-    payloadStruct = payloadDef[sensorType] #['struct']
+    payloadStruct = get_sensor_type_definition(sensorType) #['struct']
    
     data = struct.unpack(payloadStruct, fileContent)
 
-    SWIFT = {var : None for var in SWIFTvars}
+    SWIFT = {var[0] : None for var in get_variable_definitions()}
     
     if sensorType == 50:
         #TODO:
-        print('incomplete')
+        print('sensorType 50 is not yet supported')
+
     elif sensorType == 51:
-        #TODO:
-        print('incomplete')
+        payload_size = data[3]
+        SWIFT['Hs'] = data[4]
+        SWIFT['Tp'] = data[5]
+        SWIFT['Dp'] = data[6]
+        SWIFT['E']  = np.asarray(data[7:49])
+        fmin = data[49]
+        fmax = data[50]
+        fstep = data[51]
+        if fmin != 999 and fmax != 999:
+            SWIFT['f'] = np.arange(fmin, fmax + fstep, fstep)
+        else:
+            SWIFT['f'] = 999*np.ones(np.shape(SWIFT['E']))
+        SWIFT['lat'] = data[52]
+        SWIFT['lon'] = data[53]
+        SWIFT['temp'] = data[54]
+        SWIFT['volt'] = data[55]
+        SWIFT['uMean'] = data[56]
+        SWIFT['vMean'] = data[57]
+        SWIFT['zMean'] = data[58]
+        year = data[59]
+        month = data[60]
+        day = data[61]
+        hour = data[62]
+        min = data[63]
+        sec = data[64]
+        SWIFT['datetime'] = datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc)  
+        SWIFT['sensorType'] = sensorType
 
     elif sensorType == 52:
         payload_size = data[3]
@@ -108,8 +109,7 @@ def unpack_SBD(fileContent: bytes) -> dict:
         SWIFT['volt'] = data[265]
         nowEpoch = data[266]
         SWIFT['datetime'] = datetime.fromtimestamp(nowEpoch, tz=timezone.utc)  
-
-    #TODO: strip empty or Nones?
+        SWIFT['sensorType'] = sensorType
 
     return SWIFT
 
