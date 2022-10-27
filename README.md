@@ -1,4 +1,4 @@
-# microSWIFT_-_io
+# microSWIFT_io
 Offload, input, output and analysis scripts, forked from `edwinrainville/microSWIFT-io`. See `examples/` for usage. 
 
 ## Structure:
