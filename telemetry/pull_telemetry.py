@@ -28,7 +28,7 @@ import json
 from datetime import datetime
 from typing import Union, List, BinaryIO, TextIO
 from pandas import DataFrame
-from xarray import DataArray
+# from xarray import DataArray
 from compile_SBD import compile_SBD
 
 def create_request(
@@ -72,7 +72,7 @@ def pull_telemetry_as_var(
     startDate: datetime,
     endDate: datetime = datetime.utcnow(),
     varType: str = 'dict',
-)-> Union[List[dict], DataFrame, DataArray]:
+)-> Union[List[dict], DataFrame]: # DataArray
     """
     Query the SWIFT server for microSWIFT data over a specified date range and 
     return an object in memory. Note the `.zip` file of short burst data (SBD) messages
